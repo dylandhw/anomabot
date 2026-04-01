@@ -59,6 +59,21 @@ def stream_container_logs(container_name):
             time.sleep(15)
 
 @tool
+def get_recent_logs(container_name):
+    """
+    Return the most recetn buffered log lines for a given Docker container.
+    Use this to fetch logs before analyzing them.
+
+    Args:
+        A newline-string of recent log lines, or a message if empty.
+    """
+
+    buffer = log_buffers.get(container_name)
+    if not buffer:
+        return f"NO LOGS BUFFERED YET FOR CONTAINER '{container_name}'"
+    return "\n".join(buffer)
+
+@tool
 def report_anomaly(severity, container, description, fix):
     """
     Call this tool whenever you detect a real issue in the logs.
