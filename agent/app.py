@@ -33,3 +33,27 @@ anomalies_detected_total = Counter(
 # feedback loop reads from deque, streamer writes to them (per container)
 LOG_BUFFER_SIZE = 60
 log_buffers: dict[str, deque] = defaultdict(lambda: deque(maxlen=LOG_BUFFER_SIZE))
+
+
+
+# docker log streaming
+def stream_container_logs(container_name):
+    client = docker.from_env()
+
+    while True:
+        try:
+            container = client.containers.get(container_name)
+            logger.info(f"Streaming logs from: {container_name}")
+
+            for raw_line in container.logs(stream=True, follow=True, tail=30):
+                line = raw_line.decode("utf-8", errors="replace").strip()
+
+                timestamp = datetime.now().strftime("%H:%M:%S:")
+                log_buffers[container_name].append(f"[{timestamp}] {line}")
+
+        except docker.errors.NotFound:
+            logger.warning(f"CONTAINER '{container_name}' NOT FOUND - RETRYING IN 15s")
+            time.sleep(15)
+        except Exception as e:
+            logger.error(f"STREAM ERROR FOR '{container_name}': {e} - RETRYING IN 15S")
+            time.sleep(15)
