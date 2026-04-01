@@ -57,3 +57,22 @@ def stream_container_logs(container_name):
         except Exception as e:
             logger.error(f"STREAM ERROR FOR '{container_name}': {e} - RETRYING IN 15S")
             time.sleep(15)
+
+@tool
+def report_anomaly(severity, container, description, fix):
+    """
+    Call this tool whenever you detect a real issue in the logs.
+    Do **NOT** call if it if the logs appear to be healthy.
+
+    Arguments:
+        severity: One of the following: High, Medium, Low
+        container: The name of the container where the issue was found
+        description: A one-sentence summary of the issue
+        fix: One concrete and reliable remediation action the operator should take.
+
+    Returns:
+        Confirmation string (used internally only)
+    """
+    anomalies_detected_total.inc()
+    _print_alert(severity, container, description, fix)
+    return f"ALERT RECORDE: [{severity}] {description}"
