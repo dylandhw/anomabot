@@ -108,3 +108,11 @@ Your job is described as follows:
 
 Be concise and precise. Only report actual problems, not normal INFO traffic.
 """
+
+def build_agent():
+    llm = ChatGroq(
+        model=os.getenv("LLM_MODEL", "llama3-8b-8192"),
+        groq_key=os.getenv("GROQ_API_KEY"),
+        temperature=0,
+        max_tokens=1024,
+    )
