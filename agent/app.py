@@ -133,3 +133,23 @@ def build_agent():
         handle_parsing_errors=True,
         max_iterations=8,
     )
+
+# some formatting for our terminal
+COLORS = {
+    "High":   "\033[91m",
+    "Medium": "\033[93m",
+    "Low":    "\033[96m",
+    "RESET":  "\033[0m",
+}
+
+def _print_alert(severity, container, description, fix):
+    color = COLORS.get(severity, COLORS["Low"])
+    reset = COLORS["RESET"]
+    ts = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+    print(f"\n{color}{'=' * 60}")
+    print(f"ALERT | {severity.upper()} SEVERITY | {ts}")
+    print(f"CONTAINER | {container}")
+    print(f"{'=' * 6}")
+    print(f"  Issue : {description}")
+    print(f"  Fix   : {fix}")
+    print(f"{'━' * 60}{reset}\n", flush=True)
