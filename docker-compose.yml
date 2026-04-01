@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  web:
+    build: ./web
+    ports:
+      - "8000:8000"
+    networks:
+      - lognet
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: appdb
+    networks:
+      - lognet
+
+  agent:
+    build: ./agent
+    depends_on:
+      - web
+      - db
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - WATCH_CONTAINERS=log-agent-web-1,log-agent-db-1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "8001:8001"
+    networks:
+      - lognet
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - lognet
+
+networks:
+  lognet:
+    driver: bridge
