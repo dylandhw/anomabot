@@ -3,8 +3,8 @@ import logging
 import random
 import time
 from fastapi import FastAPI
+from fastapi.routing import asynccontextmanager
 
-app = FastAPI()
 logger = logging.getLogger("uvicorn")
 
 
@@ -28,3 +28,29 @@ INFO = [
     "POST /api/orders 201 120ms",
     "Background job completed: cleanup_sessions",
 ]
+
+
+# generate some test logs
+async def log_gen():
+    while True:
+        chance = random.random()
+        if chance < 0.05:
+            logger.error(random.choice(ERRORS))
+        elif chance < 0.20:
+            logger.warning(random.choice(WARNINGS))
+        else:
+            logger.info(random.choice(INFO))
+        await asyncio.sleep(random.uniform(2, 5))
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("app starting up")
+    asyncio.create_task(log_gen())
+    yield
+    print("app shutting down")
+
+app = FastAPI(lifespan=lifespan)
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
