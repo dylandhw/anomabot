@@ -153,3 +153,45 @@ def _print_alert(severity, container, description, fix):
     print(f"  Issue : {description}")
     print(f"  Fix   : {fix}")
     print(f"{'━' * 60}{reset}\n", flush=True)
+
+
+ANALYSIS_INTERVAL = 15
+WARMUP_DELAY = 10
+
+def main():
+    start_http_server(8001)
+    logger.info("PROM METRICS AVAIL AT 8001/metrics")
+
+    raw = os.getenv("WATCH_CONTAINERS", "")
+    containers = [c.strip() for c in raw.split(",") if c.strip()]
+    if not containers:
+        logger.error("NOT CONTAINERS TO WATCH")
+        return
+
+    for name in containers:
+        thread = threading.Thread(target=stream_container_logs, args=(name,), daemon=True)
+        thread.start()
+        logger.info(f"LOG STREAM THREAD STARTED FOR: {name}")
+
+
+    logger.info(f"WARMING UP FOR {WARMUP_DELAY}s TO LET BUFFERS FILL...")
+    time.sleep(WARMUP_DELAY)
+
+    agent=build_agent()
+    logger.info("AGENT READY | ANALYSIS LOOP STARTING")
+
+    while True:
+        container_list = ", ".join(f"'{c}'" for c in containers)
+        prompt = (
+            f"Check logs for these containers: {container_list}. "
+            f"Use get_recent_logs for each, then report any anomalies you find."
+        )
+        try:
+            agent.invoke({"input": prompt})
+        except Exception as exc:
+            logger.error(f"AGENT RUN FAILED: {exc}")
+
+        time.sleep(ANALYSIS_INTERVAL)
+
+if __name__ == "__main__":
+    main()
