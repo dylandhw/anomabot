@@ -116,3 +116,20 @@ def build_agent():
         temperature=0,
         max_tokens=1024,
     )
+
+    tools = [get_recent_logs, report_anomaly]
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("systems", SYSTEM_PROMPT),
+        ("human", "{input}"),
+        ("placeholder", "{agent_scratchpad}"),
+    ])
+
+    agent = create_tool_calling_agent(llm, tools, prompt)
+    return AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=False,
+        handle_parsing_errors=True,
+        max_iterations=8,
+    )
